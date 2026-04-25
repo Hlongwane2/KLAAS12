@@ -47,6 +47,7 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
     const [showActivityDetail, setShowActivityDetail] = useState(false);
     const [showCompletedDetail, setShowCompletedDetail] = useState(false);
     const [totalCompletedTasks, setTotalCompletedTasks] = useState(0);
+    const [sessionStartTime, setSessionStartTime] = useState(null);
 
     // Account Editing State
     const [isEditingAccount, setIsEditingAccount] = useState(false);
@@ -148,6 +149,44 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
         setTotalCompletedTasks(completed);
     }, [currentUser.studyTasks]);
 
+    useEffect(() => {
+        // Start session timer automatically on login
+        if (currentUser && !sessionStartTime) {
+            setSessionStartTime(Date.now());
+        }
+
+        // Save session time periodically (every 30 seconds) and on unmount
+        const interval = setInterval(() => {
+            if (sessionStartTime) {
+                const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+                // Only save if more than 30 seconds have passed
+                if (elapsed >= 30) {
+                    const updatedUser = {
+                        ...currentUser,
+                        totalStudyTime: (currentUser.totalStudyTime || 0) + elapsed
+                    };
+                    onUpdateUser(updatedUser);
+                    setSessionStartTime(Date.now()); // Reset session start time
+                }
+            }
+        }, 30000); // Check every 30 seconds
+
+        return () => {
+            // Save remaining time on unmount/logout
+            if (sessionStartTime) {
+                const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+                if (elapsed > 0) {
+                    const updatedUser = {
+                        ...currentUser,
+                        totalStudyTime: (currentUser.totalStudyTime || 0) + elapsed
+                    };
+                    onUpdateUser(updatedUser);
+                }
+            }
+            clearInterval(interval);
+        };
+    }, [currentUser, sessionStartTime]);
+
     const formatTime = (seconds) => {
         const hrs = Math.floor(seconds / 3600);
         const mins = Math.floor((seconds % 3600) / 60);
@@ -187,8 +226,7 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
             const updatedUser = {
                 ...currentUser,
                 studyTasks: updatedTasks,
-                activity: [newActivity, ...(currentUser.activity || [])],
-                totalStudyTime: (currentUser.totalStudyTime || 0) + elapsedTime
+                activity: [newActivity, ...(currentUser.activity || [])]
             };
             
             onUpdateUser(updatedUser);
@@ -216,8 +254,7 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                 onUpdateUser({
                     ...currentUser,
                     studyTasks: updatedTasks,
-                    activity: [newActivity, ...(currentUser.activity || [])],
-                    totalStudyTime: (currentUser.totalStudyTime || 0) + elapsedTime
+                    activity: [newActivity, ...(currentUser.activity || [])]
                 });
             }
             
