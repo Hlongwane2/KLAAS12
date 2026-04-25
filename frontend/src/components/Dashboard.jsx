@@ -372,7 +372,24 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
 
     const renderContent = () => {
         if (showQuestionPapers) {
-            return <QuestionPapers onBack={() => setShowQuestionPapers(false)} />;
+            try {
+                return <QuestionPapers onBack={() => setShowQuestionPapers(false)} />;
+            } catch (error) {
+                console.error('Error loading Question Papers:', error);
+                return (
+                    <div className="max-w-6xl mx-auto py-10 px-6">
+                        <button onClick={() => setShowQuestionPapers(false)} className="mb-6 btn-apple-secondary">
+                            <ArrowLeft size={18} /> Back to Dashboard
+                        </button>
+                        <div className="apple-card p-12 text-center">
+                            <p className="text-[#FF3B30] text-lg">Error loading Question Papers</p>
+                            <button onClick={() => setShowQuestionPapers(false)} className="mt-4 btn-apple-primary">
+                                Go Back
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
         }
 
         if (activeQuiz) {
