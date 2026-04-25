@@ -44,6 +44,9 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
     const [studyTimer, setStudyTimer] = useState(null);
     const [currentTaskId, setCurrentTaskId] = useState(null);
     const [elapsedTime, setElapsedTime] = useState(0);
+    const [showActivityDetail, setShowActivityDetail] = useState(false);
+    const [showCompletedDetail, setShowCompletedDetail] = useState(false);
+    const [totalCompletedTasks, setTotalCompletedTasks] = useState(0);
 
     // Account Editing State
     const [isEditingAccount, setIsEditingAccount] = useState(false);
@@ -138,6 +141,12 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
         }
         return () => clearInterval(interval);
     }, [studyTimer]);
+
+    useEffect(() => {
+        // Calculate total completed tasks
+        const completed = (currentUser.studyTasks || []).filter(task => task.completed).length;
+        setTotalCompletedTasks(completed);
+    }, [currentUser.studyTasks]);
 
     const formatTime = (seconds) => {
         const hrs = Math.floor(seconds / 3600);
@@ -235,10 +244,42 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
     };
 
     const handleToggleTask = (taskId) => {
-        const updatedTasks = (currentUser.studyTasks || []).map(task =>
-            task.id === taskId ? { ...task, completed: !task.completed } : task
+        const task = (currentUser.studyTasks || []).find(t => t.id === taskId);
+        if (!task) return;
+        
+        const isCompleting = !task.completed;
+        
+        const updatedTasks = (currentUser.studyTasks || []).map(t =>
+            t.id === taskId ? { ...t, completed: isCompleting } : t
         );
-        onUpdateUser({ ...currentUser, studyTasks: updatedTasks });
+        
+        let updatedUser = { ...currentUser, studyTasks: updatedTasks };
+        
+        // If completing a task, add activity log
+        if (isCompleting) {
+            const timeSpent = task.timeSpent || 0;
+            const newActivity = {
+                action: `Completed task: "${task.text}"${timeSpent > 0 ? ` (studied for ${formatTime(timeSpent)})` : ''}`,
+                when: new Date().toISOString(),
+                taskId: taskId,
+                duration: timeSpent,
+                type: 'completion'
+            };
+            
+            updatedUser = {
+                ...updatedUser,
+                activity: [newActivity, ...(updatedUser.activity || [])]
+            };
+            
+            // Stop timer if this task was being tracked
+            if (studyTimer === taskId) {
+                setStudyTimer(null);
+                setCurrentTaskId(null);
+                setElapsedTime(0);
+            }
+        }
+        
+        onUpdateUser(updatedUser);
     };
 
     const handleDeleteTask = (taskId) => {
@@ -264,9 +305,31 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
     const navItems = [];
 
     const stats = [
-        { label: 'Activity Logs', value: currentUser?.activity?.length || 0, icon: History, color: 'text-[#0071E3]', tab: 'SETTINGS' },
-        { label: 'Completed', value: currentUser?.quizzesDone || 0, icon: Shield, color: 'text-[#34C759]', tab: 'SETTINGS' },
-        { label: 'Time Spent', value: formatTime(currentUser?.totalStudyTime || 0), icon: Clock, color: 'text-[#FF9500]', tab: 'SETTINGS' },
+        { 
+            label: 'Activity Logs', 
+            value: currentUser?.activity?.length || 0, 
+            icon: History, 
+            color: 'text-[#0071E3]', 
+            tab: 'SETTINGS',
+            clickable: true,
+            onClick: () => setShowActivityDetail(true)
+        },
+        { 
+            label: 'Completed', 
+            value: totalCompletedTasks, 
+            icon: Shield, 
+            color: 'text-[#34C759]', 
+            tab: 'SETTINGS',
+            clickable: true,
+            onClick: () => setShowCompletedDetail(true)
+        },
+        { 
+            label: 'Time Spent', 
+            value: formatTime(currentUser?.totalStudyTime || 0), 
+            icon: Clock, 
+            color: 'text-[#FF9500]', 
+            tab: 'SETTINGS' 
+        },
     ];
 
     const renderContent = () => {
@@ -908,6 +971,144 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                     ))}
                 </nav>
             )}
+
+            {/* Activity Detail Modal */}
+            <AnimatePresence>
+                {showActivityDetail && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setShowActivityDetail(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-[#E8E8ED] flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-2xl font-semibold">Activity Log</h3>
+                                    <p className="text-sm text-[#86868B] mt-1">{currentUser.activity?.length || 0} total activities</p>
+                                </div>
+                                <button 
+                                    onClick={() => setShowActivityDetail(false)}
+                                    className="w-10 h-10 rounded-full bg-[#F5F5F7] hover:bg-[#E8E8ED] flex items-center justify-center transition-colors"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <div className="overflow-y-auto max-h-[60vh] p-6 space-y-4 custom-scrollbar">
+                                {currentUser.activity?.length > 0 ? (
+                                    currentUser.activity.map((a, i) => (
+                                        <div key={i} className="p-4 bg-[#F5F5F7] rounded-2xl">
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center shrink-0">
+                                                    {a.type === 'completion' ? (
+                                                        <CheckCircle size={16} className="text-[#34C759]" />
+                                                    ) : (
+                                                        <History size={16} className="text-[#0071E3]" />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-medium text-[#1D1D1F] mb-2">{a.action}</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <p className="text-xs text-[#86868B]">
+                                                            {new Date(a.when).toLocaleString()}
+                                                        </p>
+                                                        {a.duration > 0 && (
+                                                            <span className="text-xs bg-[#0071E3]/10 text-[#0071E3] px-2 py-1 rounded-full font-medium">
+                                                                {formatTime(a.duration)}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <History size={48} className="mx-auto text-[#D2D2D7] mb-4 opacity-20" />
+                                        <p className="text-[#86868B]">No activity recorded yet.</p>
+                                        <p className="text-sm text-[#86868B] mt-2">Start studying to see your activity!</p>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Completed Tasks Modal */}
+            <AnimatePresence>
+                {showCompletedDetail && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setShowCompletedDetail(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-[#E8E8ED] flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-2xl font-semibold">Completed Tasks</h3>
+                                    <p className="text-sm text-[#86868B] mt-1">{totalCompletedTasks} tasks completed</p>
+                                </div>
+                                <button 
+                                    onClick={() => setShowCompletedDetail(false)}
+                                    className="w-10 h-10 rounded-full bg-[#F5F5F7] hover:bg-[#E8E8ED] flex items-center justify-center transition-colors"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                            <div className="overflow-y-auto max-h-[60vh] p-6 space-y-4 custom-scrollbar">
+                                {(currentUser.studyTasks || []).filter(task => task.completed).length > 0 ? (
+                                    (currentUser.studyTasks || []).filter(task => task.completed).map(task => (
+                                        <div key={task.id} className="p-4 bg-[#F5F5F7] rounded-2xl opacity-75">
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-[#34C759]/20 flex items-center justify-center shrink-0">
+                                                    <CheckCircle size={16} className="text-[#34C759]" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-medium text-[#1D1D1F] line-through mb-2">{task.text}</p>
+                                                    <div className="flex items-center gap-3">
+                                                        {task.timeSpent > 0 && (
+                                                            <span className="text-xs bg-[#FF9500]/10 text-[#FF9500] px-2 py-1 rounded-full font-medium">
+                                                                Time: {formatTime(task.timeSpent)}
+                                                            </span>
+                                                        )}
+                                                        {task.lastStudied && (
+                                                            <p className="text-xs text-[#86868B]">
+                                                                Completed: {new Date(task.lastStudied).toLocaleDateString()}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-12">
+                                        <CheckCircle size={48} className="mx-auto text-[#D2D2D7] mb-4 opacity-20" />
+                                        <p className="text-[#86868B]">No completed tasks yet.</p>
+                                        <p className="text-sm text-[#86868B] mt-2">Complete tasks to see them here!</p>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
