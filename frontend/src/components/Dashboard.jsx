@@ -29,10 +29,12 @@ import { testGeminiKey } from '../utils/gemini';
 import { getGroqApiKey, setGroqApiKey, getGroqApiBase, setGroqApiBase, testGroqKey } from '../utils/groq';
 import StudyZone from './StudyZone';
 import QuizView from './QuizView';
+import QuestionPapers from './QuestionPapers';
 
 export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, onThemeToggle }) {
     const [activeTab, setActiveTab] = useState('DASHBOARD');
     const [activeQuiz, setActiveQuiz] = useState(null);
+    const [showQuestionPapers, setShowQuestionPapers] = useState(false);
     const [apiKey, setApiKey] = useState(localStorage.getItem('GEMINI_API_KEY') || '');
     const [groqKey, setGroqKeyState] = useState(getGroqApiKey());
     const [groqBase, setGroqBase] = useState(getGroqApiBase());
@@ -369,6 +371,10 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
     ];
 
     const renderContent = () => {
+        if (showQuestionPapers) {
+            return <QuestionPapers onBack={() => setShowQuestionPapers(false)} />;
+        }
+
         if (activeQuiz) {
             return <QuizView quiz={activeQuiz} onBack={() => setActiveQuiz(null)} />;
         }
@@ -790,6 +796,40 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                                                 <p className="text-[#86868B]">No study sets yet. Start by uploading a paper.</p>
                                             </div>
                                         )}
+                                    </div>
+                                </section>
+
+                                <section>
+                                    <div className="flex items-center justify-between mb-6 px-1">
+                                        <h3 className="text-xl font-semibold">Quick Access</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div 
+                                            onClick={() => setShowQuestionPapers(true)}
+                                            className="apple-card p-6 flex items-center gap-4 hover:border-[#0071E3]/20 cursor-pointer hover:scale-[1.01] transition-all bg-gradient-to-br from-[#0071E3]/5 to-transparent"
+                                        >
+                                            <div className="w-14 h-14 rounded-xl bg-[#0071E3]/10 flex items-center justify-center shrink-0">
+                                                <BookOpen size={24} className="text-[#0071E3]" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-lg">Grade 12 Question Papers</p>
+                                                <p className="text-sm text-[#86868B]">Download past exam papers</p>
+                                            </div>
+                                            <ChevronRight size={20} className="text-[#0071E3]" />
+                                        </div>
+                                        <div 
+                                            onClick={() => setActiveTab('STUDY')}
+                                            className="apple-card p-6 flex items-center gap-4 hover:border-[#0071E3]/20 cursor-pointer hover:scale-[1.01] transition-all bg-gradient-to-br from-[#34C759]/5 to-transparent"
+                                        >
+                                            <div className="w-14 h-14 rounded-xl bg-[#34C759]/10 flex items-center justify-center shrink-0">
+                                                <Plus size={24} className="text-[#34C759]" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-semibold text-lg">Create Study Set</p>
+                                                <p className="text-sm text-[#86868B]">Upload notes & generate quizzes</p>
+                                            </div>
+                                            <ChevronRight size={20} className="text-[#34C759]" />
+                                        </div>
                                     </div>
                                 </section>
 
