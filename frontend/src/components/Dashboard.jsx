@@ -309,8 +309,7 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
             label: 'Activity Logs', 
             value: currentUser?.activity?.length || 0, 
             icon: History, 
-            color: 'text-[#0071E3]', 
-            tab: 'SETTINGS',
+            color: 'text-[#0071E3]',
             clickable: true,
             onClick: () => setShowActivityDetail(true)
         },
@@ -318,8 +317,7 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
             label: 'Completed', 
             value: totalCompletedTasks, 
             icon: Shield, 
-            color: 'text-[#34C759]', 
-            tab: 'SETTINGS',
+            color: 'text-[#34C759]',
             clickable: true,
             onClick: () => setShowCompletedDetail(true)
         },
@@ -327,8 +325,9 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
             label: 'Time Spent', 
             value: formatTime(currentUser?.totalStudyTime || 0), 
             icon: Clock, 
-            color: 'text-[#FF9500]', 
-            tab: 'SETTINGS' 
+            color: 'text-[#FF9500]',
+            clickable: true,
+            onClick: () => setShowActivityDetail(true)
         },
     ];
 
@@ -709,7 +708,7 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: i * 0.1 }}
-                                    onClick={() => setActiveTab(stat.tab)}
+                                    onClick={stat.onClick}
                                     className="apple-card p-6 cursor-pointer hover:scale-[1.02] transition-transform"
                                 >
                                     <div className="flex items-start justify-between mb-4">
