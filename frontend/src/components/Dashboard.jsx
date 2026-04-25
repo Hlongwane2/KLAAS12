@@ -41,6 +41,9 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
     const [isTestingGemini, setIsTestingGemini] = useState(false);
     const [isTestingGroq, setIsTestingGroq] = useState(false);
     const [newTaskText, setNewTaskText] = useState('');
+    const [studyTimer, setStudyTimer] = useState(null);
+    const [currentTaskId, setCurrentTaskId] = useState(null);
+    const [elapsedTime, setElapsedTime] = useState(0);
 
     // Account Editing State
     const [isEditingAccount, setIsEditingAccount] = useState(false);
@@ -126,6 +129,95 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
         showStatus('Password changed successfully.', 'success');
     };
 
+    useEffect(() => {
+        let interval;
+        if (studyTimer) {
+            interval = setInterval(() => {
+                setElapsedTime(prev => prev + 1);
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [studyTimer]);
+
+    const formatTime = (seconds) => {
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        if (hrs > 0) {
+            return `${hrs}h ${mins}m ${secs}s`;
+        } else if (mins > 0) {
+            return `${mins}m ${secs}s`;
+        }
+        return `${secs}s`;
+    };
+
+    const handleStartTask = (taskId) => {
+        if (studyTimer && studyTimer === taskId) {
+            // Stop timer
+            setStudyTimer(null);
+            setCurrentTaskId(null);
+            
+            // Add time spent to task
+            const updatedTasks = (currentUser.studyTasks || []).map(task => {
+                if (task.id === taskId) {
+                    const timeSpent = (task.timeSpent || 0) + elapsedTime;
+                    return { ...task, timeSpent, lastStudied: new Date().toISOString() };
+                }
+                return task;
+            });
+            
+            // Add activity log
+            const task = currentUser.studyTasks.find(t => t.id === taskId);
+            const newActivity = {
+                action: `Studied "${task?.text}" for ${formatTime(elapsedTime)}`,
+                when: new Date().toISOString(),
+                taskId: taskId,
+                duration: elapsedTime
+            };
+            
+            const updatedUser = {
+                ...currentUser,
+                studyTasks: updatedTasks,
+                activity: [newActivity, ...(currentUser.activity || [])],
+                totalStudyTime: (currentUser.totalStudyTime || 0) + elapsedTime
+            };
+            
+            onUpdateUser(updatedUser);
+            setElapsedTime(0);
+        } else {
+            // Start new timer
+            if (studyTimer) {
+                // Save previous task time first
+                const updatedTasks = (currentUser.studyTasks || []).map(task => {
+                    if (task.id === studyTimer) {
+                        const timeSpent = (task.timeSpent || 0) + elapsedTime;
+                        return { ...task, timeSpent, lastStudied: new Date().toISOString() };
+                    }
+                    return task;
+                });
+                
+                const prevTask = currentUser.studyTasks.find(t => t.id === studyTimer);
+                const newActivity = {
+                    action: `Studied "${prevTask?.text}" for ${formatTime(elapsedTime)}`,
+                    when: new Date().toISOString(),
+                    taskId: studyTimer,
+                    duration: elapsedTime
+                };
+                
+                onUpdateUser({
+                    ...currentUser,
+                    studyTasks: updatedTasks,
+                    activity: [newActivity, ...(currentUser.activity || [])],
+                    totalStudyTime: (currentUser.totalStudyTime || 0) + elapsedTime
+                });
+            }
+            
+            setStudyTimer(taskId);
+            setCurrentTaskId(taskId);
+            setElapsedTime(0);
+        }
+    };
+
     const handleAddTask = () => {
         if (!newTaskText.trim()) return;
         const newTask = {
@@ -174,7 +266,7 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
     const stats = [
         { label: 'Activity Logs', value: currentUser?.activity?.length || 0, icon: History, color: 'text-[#0071E3]', tab: 'SETTINGS' },
         { label: 'Completed', value: currentUser?.quizzesDone || 0, icon: Shield, color: 'text-[#34C759]', tab: 'SETTINGS' },
-        { label: 'Time Spent', value: `${currentUser?.sessions || 0}h`, icon: Clock, color: 'text-[#FF9500]', tab: 'SETTINGS' },
+        { label: 'Time Spent', value: formatTime(currentUser?.totalStudyTime || 0), icon: Clock, color: 'text-[#FF9500]', tab: 'SETTINGS' },
     ];
 
     const renderContent = () => {
@@ -333,13 +425,18 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                                                 <p className="text-[#86868B] text-lg">All caught up! Add a new goal to begin.</p>
                                             </div>
                                         ) : (
-                                            (currentUser.studyTasks || []).map(task => (
+                                            (currentUser.studyTasks || []).map(task => {
+                                                const isTimerActive = studyTimer === task.id;
+                                                const taskTimeSpent = task.timeSpent || 0;
+                                                const displayTime = isTimerActive ? taskTimeSpent + elapsedTime : taskTimeSpent;
+                                                
+                                                return (
                                                 <motion.div 
                                                     layout
                                                     key={task.id} 
                                                     className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${
                                                         task.completed ? 'bg-[#F5F5F7] opacity-60' : 'bg-white border border-[#E8E8ED] hover:border-[#0071E3]/30'
-                                                    }`}
+                                                    } ${isTimerActive ? 'border-[#0071E3] border-2 shadow-lg' : ''}`}
                                                 >
                                                     <button 
                                                         onClick={() => handleToggleTask(task.id)}
@@ -347,14 +444,42 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                                                     >
                                                         {task.completed ? <CheckCircle size={24} /> : <Circle size={24} />}
                                                     </button>
-                                                    <span className={`flex-1 text-lg ${task.completed ? 'line-through text-[#86868B]' : 'font-medium'}`}>
-                                                        {task.text}
-                                                    </span>
-                                                    <button onClick={() => handleDeleteTask(task.id)} className="text-[#86868B] hover:text-[#FF3B30] p-2">
-                                                        <Trash2 size={20} />
-                                                    </button>
+                                                    <div className="flex-1 min-w-0">
+                                                        <span className={`text-lg ${task.completed ? 'line-through text-[#86868B]' : 'font-medium'}`}>
+                                                            {task.text}
+                                                        </span>
+                                                        {task.lastStudied && (
+                                                            <p className="text-xs text-[#86868B] mt-1">
+                                                                Last studied: {new Date(task.lastStudied).toLocaleDateString()}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="text-right">
+                                                            <p className="text-sm font-semibold text-[#0071E3]">
+                                                                {formatTime(displayTime)}
+                                                            </p>
+                                                            {isTimerActive && (
+                                                                <p className="text-xs text-[#34C759] font-medium">Studying...</p>
+                                                            )}
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => handleStartTask(task.id)}
+                                                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                                                                isTimerActive 
+                                                                    ? 'bg-[#FF3B30] text-white hover:bg-[#FF3B30]/90'
+                                                                    : 'bg-[#0071E3] text-white hover:bg-[#0071E3]/90'
+                                                            }`}
+                                                        >
+                                                            {isTimerActive ? 'Stop' : 'Start'}
+                                                        </button>
+                                                        <button onClick={() => handleDeleteTask(task.id)} className="text-[#86868B] hover:text-[#FF3B30] p-2">
+                                                            <Trash2 size={20} />
+                                                        </button>
+                                                    </div>
                                                 </motion.div>
-                                            ))
+                                            );
+                                        })
                                         )}
                                     </div>
                                 </div>
@@ -372,7 +497,14 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                                                 </div>
                                                 <div className="flex-1">
                                                     <p className="font-medium text-[#1D1D1F] mb-1">{a.action}</p>
-                                                    <p className="text-sm text-[#86868B]">{formatDateTime(a.when)}</p>
+                                                    <div className="flex items-center gap-3">
+                                                        <p className="text-sm text-[#86868B]">{formatDateTime(a.when)}</p>
+                                                        {a.duration && (
+                                                            <span className="text-xs bg-[#0071E3]/10 text-[#0071E3] px-2 py-1 rounded-full font-medium">
+                                                                {formatTime(a.duration)}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))
@@ -576,7 +708,14 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                                                     </div>
                                                     <div className="flex-1">
                                                         <p className="font-medium text-[#1D1D1F] mb-1">{a.action}</p>
-                                                        <p className="text-sm text-[#86868B]">{formatDateTime(a.when)}</p>
+                                                        <div className="flex items-center gap-3">
+                                                            <p className="text-sm text-[#86868B]">{formatDateTime(a.when)}</p>
+                                                            {a.duration && (
+                                                                <span className="text-xs bg-[#0071E3]/10 text-[#0071E3] px-2 py-1 rounded-full font-medium">
+                                                                    {formatTime(a.duration)}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))
