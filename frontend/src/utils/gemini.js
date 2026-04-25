@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getGroqApiKey, generateQuizFromGroq } from './groq';
+import { getGroqApiKey, generateFromGroq } from './groq';
 
 // We'll store the API key in localStorage for now, allowing the user to set it in settings.
 const getApiKey = () => import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem('GEMINI_API_KEY') || "";
@@ -84,7 +84,7 @@ export const generateQuizFromPaper = async (paperContent, fileType = 'text', opt
 
     if (groqKey) {
         try {
-            return await generateQuizFromGroq(paperContent, questionCount, difficulty);
+            return await generateFromGroq(paperContent, questionCount, difficulty);
         } catch (err) {
             console.warn('GROQ generation failed, falling back to Gemini/local', err);
         }

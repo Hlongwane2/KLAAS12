@@ -15,14 +15,9 @@ function App() {
         const user = await getCurrentUser();
         if (user) {
           setCurrentUser(user);
-        } else {
-          setCurrentUser(defaultUser);
-          saveCurrentUserStorage(defaultUser.username);
         }
       } catch (err) {
-        console.error("Failed to load user from DB. Falling back to default user.", err);
-        setCurrentUser(defaultUser);
-        saveCurrentUserStorage(defaultUser.username);
+        console.error("Failed to load user. Showing login screen.", err);
       } finally {
         setLoadingUser(false);
       }

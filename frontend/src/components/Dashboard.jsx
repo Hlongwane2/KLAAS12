@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import bcrypt from 'bcryptjs';
 import { 
     LayoutDashboard, 
     BookOpen, 
@@ -40,6 +41,13 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
     const [isTestingGemini, setIsTestingGemini] = useState(false);
     const [isTestingGroq, setIsTestingGroq] = useState(false);
     const [newTaskText, setNewTaskText] = useState('');
+
+    // Account Editing State
+    const [isEditingAccount, setIsEditingAccount] = useState(false);
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
+    const [accountData, setAccountData] = useState({ username: '', email: '' });
+    const [passwordData, setPasswordData] = useState({ current: '', newPassword: '' });
+    const [searchQuery, setSearchQuery] = useState('');
 
     const isGeminiEnv = !!import.meta.env.VITE_GEMINI_API_KEY;
     const isGroqEnv = !!import.meta.env.VITE_GROQ_API_KEY;
@@ -92,6 +100,32 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
         }
     };
 
+    const handleSaveAccount = () => {
+        if (!accountData.username.trim() || !accountData.email.trim()) {
+            showStatus('Username and email cannot be empty.', 'error');
+            return;
+        }
+        onUpdateUser({ ...currentUser, ...accountData });
+        setIsEditingAccount(false);
+        showStatus('Account information updated successfully.', 'success');
+    };
+
+    const handleSavePassword = () => {
+        if (!bcrypt.compareSync(passwordData.current, currentUser.password)) {
+            showStatus('Current password is incorrect.', 'error');
+            return;
+        }
+        if (!passwordData.newPassword || passwordData.newPassword.length < 4) {
+            showStatus('New password must be at least 4 characters.', 'error');
+            return;
+        }
+        const newHashed = bcrypt.hashSync(passwordData.newPassword, 10);
+        onUpdateUser({ ...currentUser, password: newHashed });
+        setIsChangingPassword(false);
+        setPasswordData({ current: '', newPassword: '' });
+        showStatus('Password changed successfully.', 'success');
+    };
+
     const handleAddTask = () => {
         if (!newTaskText.trim()) return;
         const newTask = {
@@ -135,18 +169,12 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
         });
     };
 
-    const navItems = [
-        { label: 'Overview', id: 'DASHBOARD', icon: LayoutDashboard },
-        { label: 'Study Zone', id: 'STUDY', icon: BookOpen },
-        { label: 'History', id: 'ACTIVITY', icon: History },
-        { label: 'Settings', id: 'SETTINGS', icon: Settings },
-    ];
+    const navItems = [];
 
     const stats = [
-        { label: 'Study Sets', value: currentUser.papers?.length || 0, icon: BookOpen, color: 'text-[#0071E3]', tab: 'STUDY' },
-        { label: 'Completed', value: currentUser.quizzesDone || 0, icon: Shield, color: 'text-[#34C759]', tab: 'ACTIVITY' },
-        { label: 'Time Spent', value: `${currentUser.sessions || 0}h`, icon: Clock, color: 'text-[#FF9500]', tab: 'ACTIVITY' },
-        { label: 'Account', value: currentUser.securityLevel, icon: UserCircle, color: 'text-[#AF52DE]', tab: 'SETTINGS' },
+        { label: 'Activity Logs', value: currentUser?.activity?.length || 0, icon: History, color: 'text-[#0071E3]', tab: 'SETTINGS' },
+        { label: 'Completed', value: currentUser?.quizzesDone || 0, icon: Shield, color: 'text-[#34C759]', tab: 'SETTINGS' },
+        { label: 'Time Spent', value: `${currentUser?.sessions || 0}h`, icon: Clock, color: 'text-[#FF9500]', tab: 'SETTINGS' },
     ];
 
     const renderContent = () => {
@@ -157,9 +185,9 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
         switch (activeTab) {
             case 'STUDY':
                 return (
-                    <StudyZone 
-                        currentUser={currentUser} 
-                        onUpdateUser={onUpdateUser} 
+                    <StudyZone
+                        currentUser={currentUser}
+                        onUpdateUser={onUpdateUser}
                         onStartQuiz={setActiveQuiz}
                         offlineMode={offlineMode}
                         onBack={() => setActiveTab('DASHBOARD')}
@@ -332,6 +360,31 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                                 </div>
                             </section>
 
+                            {/* History Section */}
+                            <section>
+                                <h3 className="text-xl font-semibold mb-6">Activity History</h3>
+                                <div className="apple-card divide-y divide-[#E8E8ED] mb-12">
+                                    {currentUser.activity?.length > 0 ? (
+                                        currentUser.activity.map((a, i) => (
+                                            <div key={i} className="p-6 flex items-start gap-4 hover:bg-[#F5F5F7] transition-colors">
+                                                <div className="mt-1 w-10 h-10 rounded-full bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0">
+                                                    <History size={18} className="text-[#0071E3]" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="font-medium text-[#1D1D1F] mb-1">{a.action}</p>
+                                                    <p className="text-sm text-[#86868B]">{formatDateTime(a.when)}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="p-20 text-center">
+                                            <History size={48} className="mx-auto text-[#D2D2D7] mb-4 opacity-20" />
+                                            <p className="text-[#86868B]">No activity recorded yet.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+
                             {/* Profile Section */}
                             <section>
                                 <h3 className="text-xl font-semibold mb-6">Profile</h3>
@@ -341,14 +394,14 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                                             <User size={40} className="text-[#86868B]" />
                                         </div>
                                         <div>
-                                            <h4 className="text-2xl font-semibold">{currentUser.username}</h4>
-                                            <p className="text-[#86868B]">{currentUser.email}</p>
+                                            <h4 className="text-2xl font-semibold">{currentUser?.username || 'Klaas'}</h4>
+                                            <p className="text-[#86868B]">{currentUser?.email || 'hlongwaneklaas53@gmail.com'}</p>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-8 text-center">
                                         <div className="bg-[#F5F5F7] p-6 rounded-2xl">
                                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#86868B] mb-2">Member Since</p>
-                                            <p className="text-lg font-medium">{new Date(currentUser.createdAt).toLocaleDateString()}</p>
+                                            <p className="text-lg font-medium">{currentUser?.createdAt ? new Date(currentUser.createdAt).toLocaleDateString() : 'N/A'}</p>
                                         </div>
                                         <div className="bg-[#F5F5F7] p-6 rounded-2xl">
                                             <p className="text-[10px] font-bold uppercase tracking-widest text-[#86868B] mb-2">Security</p>
@@ -360,40 +413,75 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                                     </div>
                                 </div>
                             </section>
-                        </div>
-                    </div>
-                );
-            case 'ACTIVITY':
-                return (
-                    <div className="max-w-4xl mx-auto py-10 fade-in px-6">
-                        <header className="mb-12">
-                            <button onClick={() => setActiveTab('DASHBOARD')} className="mb-6 btn-apple-secondary lg:hidden">
-                                <ArrowLeft size={18} /> Dashboard
-                            </button>
-                            <h2 className="text-4xl font-semibold tracking-tight mb-2">History</h2>
-                            <p className="text-[#86868B] text-lg">Your recent learning activity and milestones.</p>
-                        </header>
-                        
-                        <div className="apple-card divide-y divide-[#E8E8ED]">
-                            {currentUser.activity?.length > 0 ? (
-                                currentUser.activity.map((a, i) => (
-                                    <div key={i} className="p-6 flex items-start gap-4 hover:bg-[#F5F5F7] transition-colors">
-                                        <div className="mt-1 w-10 h-10 rounded-full bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0">
-                                            <History size={18} className="text-[#0071E3]" />
+                            {/* Account Management Section */}
+                            <section>
+                                <h3 className="text-xl font-semibold mb-6">Account</h3>
+                                <div className="apple-card divide-y divide-[#E8E8ED]">
+                                    {isEditingAccount ? (
+                                        <div className="p-6 bg-[#F5F5F7]">
+                                            <h4 className="font-medium text-lg mb-4 text-[#1D1D1F]">Edit Account Info</h4>
+                                            <div className="space-y-3 mb-5">
+                                                <input type="text" value={accountData.username} onChange={e => setAccountData({...accountData, username: e.target.value})} placeholder="Username" className="w-full px-4 py-3 bg-white border-transparent rounded-xl text-sm focus:border-[#0071E3] transition-all outline-none" />
+                                                <input type="email" value={accountData.email} onChange={e => setAccountData({...accountData, email: e.target.value})} placeholder="Email" className="w-full px-4 py-3 bg-white border-transparent rounded-xl text-sm focus:border-[#0071E3] transition-all outline-none" />
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <button onClick={handleSaveAccount} className="btn-apple-primary py-2 px-6">Save</button>
+                                                <button onClick={() => setIsEditingAccount(false)} className="btn-apple-secondary py-2 px-6">Cancel</button>
+                                            </div>
                                         </div>
-                                        <div className="flex-1">
-                                            <p className="font-medium text-[#1D1D1F] mb-1">{a.action}</p>
-                                            <p className="text-sm text-[#86868B]">{formatDateTime(a.when)}</p>
+                                    ) : (
+                                        <div 
+                                            onClick={() => { setAccountData({ username: currentUser.username || '', email: currentUser.email || '' }); setIsEditingAccount(true); }}
+                                            className="p-6 flex items-center justify-between hover:bg-[#F5F5F7] transition-colors cursor-pointer"
+                                        >
+                                            <div>
+                                                <p className="font-medium text-lg text-[#1D1D1F]">Account Information</p>
+                                                <p className="text-sm text-[#86868B]">Update your email, username, and personal details.</p>
+                                            </div>
+                                            <ChevronRight size={20} className="text-[#D2D2D7]" />
                                         </div>
-                                        <ChevronRight size={16} className="text-[#D2D2D7] mt-2" />
+                                    )}
+
+                                    {isChangingPassword ? (
+                                        <div className="p-6 bg-[#F5F5F7]">
+                                            <h4 className="font-medium text-lg mb-4 text-[#1D1D1F]">Change Password</h4>
+                                            <div className="space-y-3 mb-5">
+                                                <input type="password" value={passwordData.current} onChange={e => setPasswordData({...passwordData, current: e.target.value})} placeholder="Current Password" className="w-full px-4 py-3 bg-white border-transparent rounded-xl text-sm focus:border-[#0071E3] transition-all outline-none" />
+                                                <input type="password" value={passwordData.newPassword} onChange={e => setPasswordData({...passwordData, newPassword: e.target.value})} placeholder="New Password" className="w-full px-4 py-3 bg-white border-transparent rounded-xl text-sm focus:border-[#0071E3] transition-all outline-none" />
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <button onClick={handleSavePassword} className="btn-apple-primary py-2 px-6">Update Password</button>
+                                                <button onClick={() => { setIsChangingPassword(false); setPasswordData({ current: '', newPassword: '' }); }} className="btn-apple-secondary py-2 px-6">Cancel</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div 
+                                            onClick={() => setIsChangingPassword(true)}
+                                            className="p-6 flex items-center justify-between hover:bg-[#F5F5F7] transition-colors cursor-pointer"
+                                        >
+                                            <div>
+                                                <p className="font-medium text-lg text-[#1D1D1F]">Change Password</p>
+                                                <p className="text-sm text-[#86868B]">Update your encryption and login credentials.</p>
+                                            </div>
+                                            <ChevronRight size={20} className="text-[#D2D2D7]" />
+                                        </div>
+                                    )}
+
+                                    <div className="p-6 flex items-center justify-between">
+                                        <div>
+                                            <p className="font-medium text-lg text-[#FF3B30]">Sign Out</p>
+                                            <p className="text-sm text-[#86868B]">Log out of your Klaas account on this device.</p>
+                                        </div>
+                                        <button
+                                            onClick={onLogout}
+                                            className="flex items-center gap-2 px-6 py-3 bg-[#FF3B30]/10 text-[#FF3B30] rounded-xl font-semibold hover:bg-[#FF3B30]/20 transition-colors"
+                                        >
+                                            <LogOut size={18} />
+                                            Sign Out
+                                        </button>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="p-20 text-center">
-                                    <History size={48} className="mx-auto text-[#D2D2D7] mb-4 opacity-20" />
-                                    <p className="text-[#86868B]">No activity recorded yet.</p>
                                 </div>
-                            )}
+                            </section>
                         </div>
                     </div>
                 );
@@ -401,13 +489,25 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
             default:
                 return (
                     <div className="max-w-6xl mx-auto py-10 fade-in px-6">
-                        <header className="mb-12">
-                            <h2 className="text-4xl font-semibold tracking-tight mb-2">Welcome, {currentUser.username}</h2>
-                            <p className="text-[#86868B] text-lg">Pick up where you left off today.</p>
+                        <header className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <div>
+                                <h2 className="text-4xl font-semibold tracking-tight mb-2">Welcome, {currentUser.username}</h2>
+                                <p className="text-[#86868B] text-lg">Pick up where you left off today.</p>
+                            </div>
+                            <div className="relative w-full md:w-72 shrink-0">
+                                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#86868B]" />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search your study sets..." 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full bg-white border border-[#E8E8ED] hover:border-[#D2D2D7] focus:border-[#0071E3] rounded-full py-3 pl-11 pr-4 text-sm outline-none transition-colors shadow-apple-soft"
+                                />
+                            </div>
                         </header>
 
                         {/* Recent Stat Highlights */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                             {stats.map((stat, i) => (
                                 <motion.div 
                                     key={i}
@@ -436,7 +536,7 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                                         <button onClick={() => setActiveTab('STUDY')} className="text-[#0071E3] font-medium text-sm hover:underline">View All</button>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {currentUser.papers?.slice(0, 4).map(paper => (
+                                        {currentUser.papers?.filter(p => p.name?.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 4).map(paper => (
                                             <div 
                                                 key={paper.id} 
                                                 onClick={() => setActiveTab('STUDY')}
@@ -451,10 +551,39 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                                                 </div>
                                                 <ChevronRight size={16} className="text-[#D2D2D7]" />
                                             </div>
-                                        )) || (
+                                        ))}
+
+                                        {(!currentUser.papers || currentUser.papers.length === 0) && (
                                             <div className="col-span-2 apple-card p-12 text-center border-dashed border-2">
                                                 <Plus size={32} className="mx-auto text-[#D2D2D7] mb-4" />
                                                 <p className="text-[#86868B]">No study sets yet. Start by uploading a paper.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
+
+                                <section>
+                                    <div className="flex items-center justify-between mb-6 px-1">
+                                        <h3 className="text-xl font-semibold">Recent History</h3>
+                                        <button onClick={() => setActiveTab('SETTINGS')} className="text-[#0071E3] font-medium text-sm hover:underline">View All</button>
+                                    </div>
+                                    <div className="apple-card divide-y divide-[#E8E8ED]">
+                                        {currentUser.activity?.length > 0 ? (
+                                            currentUser.activity.slice(0, 5).map((a, i) => (
+                                                <div key={i} className="p-6 flex items-start gap-4 hover:bg-[#F5F5F7] transition-colors">
+                                                    <div className="mt-1 w-10 h-10 rounded-full bg-white shadow-sm border border-black/5 flex items-center justify-center shrink-0">
+                                                        <History size={18} className="text-[#0071E3]" />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="font-medium text-[#1D1D1F] mb-1">{a.action}</p>
+                                                        <p className="text-sm text-[#86868B]">{formatDateTime(a.when)}</p>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="p-12 text-center">
+                                                <History size={32} className="mx-auto text-[#D2D2D7] mb-4 opacity-20" />
+                                                <p className="text-[#86868B]">No activity recorded yet.</p>
                                             </div>
                                         )}
                                     </div>
@@ -514,11 +643,12 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
         }
     };
 
+
     return (
         <div className="flex min-h-screen bg-[#F5F5F7]">
             {/* Sidebar */}
             <aside className="w-[280px] bg-[#F5F5F7] border-r border-[#E8E8ED] flex flex-col p-6 hidden lg:flex sticky top-0 h-screen">
-                <div className="flex items-center gap-3 mb-12 px-2">
+                <div className="flex items-center gap-3 mb-12 px-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setActiveTab('DASHBOARD')}>
                     <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center text-white shadow-lg">
                         <Shield size={24} />
                     </div>
@@ -546,15 +676,24 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                 </nav>
 
                 <div className="mt-auto space-y-1">
-                    <div className="p-4 bg-white/50 backdrop-blur-md rounded-2xl border border-black/5 mb-4">
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="w-8 h-8 rounded-full bg-[#E8E8ED] flex items-center justify-center">
-                                <User size={16} className="text-[#86868B]" />
+                    <div className="p-4 bg-white/50 backdrop-blur-md rounded-2xl border border-black/5 mb-4 relative hover:bg-white transition-colors">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[#E8E8ED] flex items-center justify-center">
+                                    <User size={16} className="text-[#86868B]" />
+                                </div>
+                                <div className="flex-1 truncate max-w-[120px]">
+                                    <p className="text-xs font-bold truncate">{currentUser.username}</p>
+                                    <p className="text-[10px] text-[#86868B] truncate">{currentUser.email}</p>
+                                </div>
                             </div>
-                            <div className="flex-1 truncate">
-                                <p className="text-xs font-bold truncate">{currentUser.username}</p>
-                                <p className="text-[10px] text-[#86868B] truncate">{currentUser.email}</p>
-                            </div>
+                            <button 
+                                onClick={() => setActiveTab('SETTINGS')}
+                                className="p-2 text-[#86868B] hover:text-[#0071E3] hover:bg-[#F5F5F7] rounded-full transition-colors"
+                                title="Settings"
+                            >
+                                <Settings size={18} />
+                            </button>
                         </div>
                         <button 
                             onClick={onLogout}
@@ -568,7 +707,7 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto relative h-screen">
+            <main className="flex-1 overflow-y-auto relative h-screen pb-24 lg:pb-0">
                 {/* Status Bar */}
                 <AnimatePresence>
                     {statusMessage.text && (
@@ -593,15 +732,43 @@ export default function Dashboard({ currentUser, onLogout, onUpdateUser, theme, 
                 </AnimatePresence>
 
                 {/* Mobile Header (Mobile only) */}
-                <div className="lg:hidden apple-glass sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
-                    <h1 className="text-xl font-bold tracking-tight">Klaas</h1>
-                    <button onClick={() => setActiveTab('SETTINGS')} className="w-10 h-10 rounded-full bg-[#E8E8ED] flex items-center justify-center">
-                        <User size={20} className="text-[#86868B]" />
+                <div className="lg:hidden bg-white/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-[#E8E8ED]">
+                    <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setActiveTab('DASHBOARD')}>
+                         <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-white shadow-sm">
+                            <Shield size={18} />
+                        </div>
+                        <h1 className="text-xl font-bold tracking-tight">Klaas</h1>
+                    </div>
+                    <button onClick={() => setActiveTab('SETTINGS')} className="w-10 h-10 rounded-full bg-[#F5F5F7] flex items-center justify-center shadow-sm border border-[#E8E8ED]">
+                        <Settings size={20} className="text-[#86868B]" />
                     </button>
                 </div>
 
                 {renderContent()}
             </main>
+
+            {/* Bottom Navigation (Mobile only) */}
+            {navItems.length > 0 && (
+                <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-[#E8E8ED] z-50 flex justify-around items-center pt-2 pb-[env(safe-area-inset-bottom,16px)] px-2">
+                    {navItems.map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => {
+                                setActiveTab(item.id);
+                                setActiveQuiz(null);
+                            }}
+                            className={`flex flex-col items-center p-2 min-w-[64px] transition-colors ${
+                                activeTab === item.id 
+                                ? 'text-[#0071E3]' 
+                                : 'text-[#86868B] hover:text-[#1D1D1F]'
+                            }`}
+                        >
+                            <item.icon size={24} className="mb-1" />
+                            <span className="text-[10px] font-medium">{item.label}</span>
+                        </button>
+                    ))}
+                </nav>
+            )}
         </div>
     );
 }

@@ -27,19 +27,24 @@ export async function getUser(username) {
     try {
         const { data, error } = await supabase.from('users').select('user_data').eq('username', username).single();
         if (error || !data) {
-            if (username === defaultUser.username) {
-                return defaultUser;
-            }
+            const localUser = localStorage.getItem(`klaas_user_${username}`);
+            if (localUser) return JSON.parse(localUser);
+            
+            if (username === defaultUser.username) return defaultUser;
             return null;
         }
+        localStorage.setItem(`klaas_user_${username}`, JSON.stringify(data.user_data));
         return data.user_data;
     } catch (e) {
         console.warn("Supabase auth failed. Defaulting to local dummy user.", e);
+        const localUser = localStorage.getItem(`klaas_user_${username}`);
+        if (localUser) return JSON.parse(localUser);
         return username === defaultUser.username ? defaultUser : null;
     }
 }
 
 export async function updateUser(user) {
+    localStorage.setItem(`klaas_user_${user.username}`, JSON.stringify(user));
     try {
         const { error } = await supabase.from('users').upsert({ 
             username: user.username, 
@@ -76,11 +81,7 @@ export async function addQuizToUser(username, quiz) {
 
 export async function getCurrentUser() {
     const currentUsername = localStorage.getItem(CURRENT_USER_KEY);
-    if (!currentUsername) {
-        // Fallback for dev mode bypassed login
-        const def = await getUser(defaultUser.username);
-        return def || defaultUser;
-    }
+    if (!currentUsername) return null;
     return await getUser(currentUsername);
 }
 

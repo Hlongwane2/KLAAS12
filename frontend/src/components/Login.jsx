@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User, Phone, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, User, Phone, ArrowRight } from 'lucide-react';
 import bcrypt from 'bcryptjs';
 import { getUser, updateUser } from '../utils/storage';
 
@@ -19,8 +19,6 @@ export default function Login({ onLoginSuccess }) {
         e.preventDefault();
         setError('');
         setIsLoading(true);
-
-        // Artificial delay for premium feel
         await new Promise(resolve => setTimeout(resolve, 800));
 
         if (isLogin) {
@@ -53,144 +51,200 @@ export default function Login({ onLoginSuccess }) {
         setIsLoading(false);
     };
 
-    return (
-        <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#F5F5F7]">
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-                className="w-full max-w-[440px]"
-            >
-                <div className="text-center mb-10">
-                    <motion.div
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 0.2, duration: 0.5 }}
-                        className="inline-flex items-center justify-center w-20 h-20 rounded-[22%] bg-white shadow-apple-soft mb-6 border border-black/5"
-                    >
-                        <ShieldCheck size={40} className="text-[#0071E3]" />
-                    </motion.div>
-                    <h1 className="text-4xl font-semibold tracking-tight text-[#1D1D1F] mb-3">
-                        {isLogin ? 'Sign In' : 'Create Account'}
-                    </h1>
-                    <p className="text-[#86868B] text-lg font-medium">
-                        {isLogin ? 'Welcome back to Klaas' : 'Start your study journey'}
-                    </p>
-                </div>
+    const pageStyle = {
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F5F5F7',
+    };
 
-                <div className="apple-card p-10 bg-white">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+    const boxStyle = {
+        width: '100%',
+        maxWidth: '300px',
+        backgroundColor: '#ffffff',
+        borderRadius: '16px',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
+        padding: '24px 20px 18px 20px',
+    };
+
+    const titleStyle = {
+        textAlign: 'center',
+        fontSize: '24px',
+        fontWeight: '600',
+        color: '#1D1D1F',
+        marginBottom: '16px',
+        letterSpacing: '-0.3px',
+    };
+
+    const inputWrapStyle = {
+        position: 'relative',
+        marginBottom: '8px',
+    };
+
+    const iconStyle = {
+        position: 'absolute',
+        left: '10px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        color: '#86868B',
+        pointerEvents: 'none',
+    };
+
+    const inputStyle = {
+        width: '100%',
+        paddingLeft: '32px',
+        paddingRight: '10px',
+        paddingTop: '8px',
+        paddingBottom: '8px',
+        backgroundColor: '#F5F5F7',
+        border: '1px solid transparent',
+        borderRadius: '10px',
+        fontSize: '13px',
+        outline: 'none',
+        boxSizing: 'border-box',
+        color: '#1D1D1F',
+    };
+
+    const btnStyle = {
+        width: '100%',
+        marginTop: '12px',
+        padding: '9px',
+        backgroundColor: '#0071E3',
+        color: '#fff',
+        border: 'none',
+        borderRadius: '10px',
+        fontSize: '13px',
+        fontWeight: '600',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '6px',
+    };
+
+    const toggleStyle = {
+        marginTop: '12px',
+        paddingTop: '12px',
+        borderTop: '1px solid #E8E8ED',
+        textAlign: 'center',
+    };
+
+    const toggleLinkStyle = {
+        fontSize: '11px',
+        color: '#0071E3',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        fontWeight: '500',
+    };
+
+    return (
+        <div style={pageStyle}>
+            <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                style={{ width: '100%', maxWidth: '300px' }}
+            >
+                <div style={boxStyle}>
+                    <div style={titleStyle}>{isLogin ? 'Sign In' : 'Create Account'}</div>
+
+                    <form onSubmit={handleSubmit}>
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={isLogin ? 'login' : 'signup'}
-                                initial={{ opacity: 0, x: 10 }}
+                                initial={{ opacity: 0, x: 8 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -10 }}
-                                transition={{ duration: 0.3 }}
-                                className="space-y-4"
+                                exit={{ opacity: 0, x: -8 }}
+                                transition={{ duration: 0.25 }}
                             >
-                                <div className="space-y-4">
-                                    <div className="relative">
-                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[#86868B]" size={20} />
-                                        <input
-                                            type="text"
-                                            placeholder="Username"
-                                            value={formData.username}
-                                            onChange={(e) => setFormData({...formData, username: e.target.value})}
-                                            className="w-full pl-12 pr-4 py-4 bg-[#F5F5F7] border-transparent focus:bg-white focus:border-[#0071E3] transition-all rounded-xl text-lg outline-none"
-                                            required
-                                        />
-                                    </div>
+                                <div style={inputWrapStyle}>
+                                    <span style={iconStyle}><User size={13} /></span>
+                                    <input
+                                        type="text"
+                                        placeholder="Username"
+                                        value={formData.username}
+                                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                        style={inputStyle}
+                                        required
+                                    />
+                                </div>
 
-                                    {!isLogin && (
-                                        <>
-                                            <div className="relative">
-                                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#86868B]" size={20} />
-                                                <input
-                                                    type="email"
-                                                    placeholder="Email address"
-                                                    value={formData.email}
-                                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                                    className="w-full pl-12 pr-4 py-4 bg-[#F5F5F7] border-transparent focus:bg-white focus:border-[#0071E3] transition-all rounded-xl text-lg outline-none"
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="relative">
-                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-[#86868B]" size={20} />
-                                                <input
-                                                    type="tel"
-                                                    placeholder="Phone number (optional)"
-                                                    value={formData.phone}
-                                                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                                                    className="w-full pl-12 pr-4 py-4 bg-[#F5F5F7] border-transparent focus:bg-white focus:border-[#0071E3] transition-all rounded-xl text-lg outline-none"
-                                                />
-                                            </div>
-                                        </>
-                                    )}
+                                {!isLogin && (
+                                    <>
+                                        <div style={inputWrapStyle}>
+                                            <span style={iconStyle}><Mail size={13} /></span>
+                                            <input
+                                                type="email"
+                                                placeholder="Email address"
+                                                value={formData.email}
+                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                style={inputStyle}
+                                                required
+                                            />
+                                        </div>
+                                        <div style={inputWrapStyle}>
+                                            <span style={iconStyle}><Phone size={13} /></span>
+                                            <input
+                                                type="tel"
+                                                placeholder="Phone (optional)"
+                                                value={formData.phone}
+                                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                style={inputStyle}
+                                            />
+                                        </div>
+                                    </>
+                                )}
 
-                                    <div className="relative">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#86868B]" size={20} />
-                                        <input
-                                            type="password"
-                                            placeholder="Password"
-                                            value={formData.password}
-                                            onChange={(e) => setFormData({...formData, password: e.target.value})}
-                                            className="w-full pl-12 pr-4 py-4 bg-[#F5F5F7] border-transparent focus:bg-white focus:border-[#0071E3] transition-all rounded-xl text-lg outline-none"
-                                            required
-                                        />
-                                    </div>
+                                <div style={inputWrapStyle}>
+                                    <span style={iconStyle}><Lock size={13} /></span>
+                                    <input
+                                        type="password"
+                                        placeholder="Password"
+                                        value={formData.password}
+                                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                        style={inputStyle}
+                                        required
+                                    />
                                 </div>
                             </motion.div>
                         </AnimatePresence>
 
                         {error && (
-                            <motion.p 
+                            <motion.p
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="text-[#FF3B30] text-sm text-center font-medium"
+                                style={{ color: '#FF3B30', fontSize: '11px', textAlign: 'center', margin: '6px 0 0' }}
                             >
                                 {error}
                             </motion.p>
                         )}
 
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full btn-apple-primary justify-center py-4 text-lg group"
-                        >
+                        <button type="submit" disabled={isLoading} style={btnStyle}>
                             {isLoading ? (
-                                <motion.div 
+                                <motion.div
                                     animate={{ rotate: 360 }}
-                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                    className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full"
+                                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                                    style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%' }}
                                 />
                             ) : (
                                 <>
                                     {isLogin ? 'Sign In' : 'Create Account'}
-                                    <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                    <ArrowRight size={14} />
                                 </>
                             )}
                         </button>
                     </form>
 
-                    <div className="mt-8 pt-8 border-t border-[#E8E8ED] text-center">
+                    <div style={toggleStyle}>
                         <button
-                            onClick={() => {
-                                setIsLogin(!isLogin);
-                                setError('');
-                            }}
-                            className="text-[#0071E3] font-medium hover:underline text-lg"
+                            style={toggleLinkStyle}
+                            onClick={() => { setIsLogin(!isLogin); setError(''); }}
                         >
-                            {isLogin ? "Don't have an ID? Create yours now." : "Already have an ID? Sign in."}
+                            {isLogin ? "Don't have an ID? Create one." : "Already have an ID? Sign in."}
                         </button>
                     </div>
-                </div>
-
-                <div className="mt-12 text-center">
-                    <p className="text-[#86868B] text-sm">
-                        By continuing, you agree to Klaas's <br />
-                        <span className="text-[#1D1D1F] font-medium cursor-pointer hover:underline">Terms of Service</span> and <span className="text-[#1D1D1F] font-medium cursor-pointer hover:underline">Privacy Policy</span>
-                    </p>
                 </div>
             </motion.div>
         </div>
