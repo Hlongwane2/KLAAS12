@@ -439,54 +439,144 @@ export default function QuestionPapers({ onBack }) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden"
+              className="bg-white rounded-3xl shadow-2xl max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col"
             >
-              <div className="p-6 border-b border-[#E8E8ED] flex items-center justify-between">
-                <div>
+              {/* Header */}
+              <div className="p-6 border-b border-[#E8E8ED] flex items-center justify-between bg-white">
+                <div className="flex-1">
                   <h3 className="text-2xl font-semibold">{selectedPaper.title}</h3>
-                  <p className="text-sm text-[#86868B] mt-1">{selectedPaper.subject} • {selectedPaper.year}</p>
+                  <div className="flex items-center gap-4 mt-2 text-sm text-[#86868B]">
+                    <span>{selectedPaper.subject}</span>
+                    <span>•</span>
+                    <span>{selectedPaper.year}</span>
+                    <span>•</span>
+                    <span>{selectedPaper.marks} marks</span>
+                    <span>•</span>
+                    <span>{selectedPaper.duration}</span>
+                  </div>
                 </div>
                 <button 
                   onClick={() => setShowViewer(false)}
-                  className="w-10 h-10 rounded-full bg-[#F5F5F7] hover:bg-[#E8E8ED] flex items-center justify-center transition-colors text-xl"
+                  className="w-10 h-10 rounded-full bg-[#F5F5F7] hover:bg-[#E8E8ED] flex items-center justify-center transition-colors text-xl ml-4"
                 >
                   ×
                 </button>
               </div>
               
-              <div className="p-6 bg-[#F5F5F7]">
+              {/* Tabs */}
+              <div className="flex border-b border-[#E8E8ED] bg-[#F5F5F7]">
+                <button
+                  onClick={() => setLoading(true) || setTimeout(() => setLoading(false), 500)}
+                  className="flex-1 py-4 px-6 font-semibold text-[#0071E3] border-b-2 border-[#0071E3] bg-white"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <FileText size={18} />
+                    Question Paper
+                  </div>
+                </button>
+                <button
+                  onClick={() => setLoading(true) || setTimeout(() => setLoading(false), 500)}
+                  className="flex-1 py-4 px-6 font-semibold text-[#86868B] hover:text-[#1D1D1F]"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <FileBadge size={18} />
+                    Memorandum
+                  </div>
+                </button>
+              </div>
+
+              {/* PDF Content */}
+              <div className="flex-1 overflow-hidden bg-[#F5F5F7]">
                 {loading ? (
-                  <div className="flex flex-col items-center justify-center py-20">
+                  <div className="flex flex-col items-center justify-center h-full">
                     <Loader2 size={48} className="animate-spin text-[#0071E3] mb-4" />
                     <p className="text-[#86868B]">Loading question paper...</p>
                   </div>
                 ) : (
-                  <div className="bg-white rounded-2xl p-8 text-center">
-                    <FileText size={64} className="mx-auto text-[#0071E3] mb-4" />
-                    <h4 className="text-xl font-semibold mb-2">{selectedPaper.title}</h4>
-                    <p className="text-[#86868B] mb-6">Marks: {selectedPaper.marks} | Duration: {selectedPaper.duration}</p>
-                    
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                      <button
-                        onClick={() => handleDownload(selectedPaper, 'question')}
-                        className="flex items-center gap-2 px-6 py-3 bg-[#0071E3] text-white rounded-xl font-semibold hover:bg-[#0071E3]/90"
-                      >
-                        <Download size={18} />
-                        Download Question Paper
-                      </button>
-                      <button
-                        onClick={() => handleDownload(selectedPaper, 'memo')}
-                        className="flex items-center gap-2 px-6 py-3 bg-[#FF9500] text-white rounded-xl font-semibold hover:bg-[#FF9500]/90"
-                      >
-                        <FileBadge size={18} />
-                        Download Memorandum
-                      </button>
-                    </div>
+                  <div className="h-full p-6">
+                    <div className="bg-white rounded-2xl shadow-lg overflow-hidden h-full flex flex-col">
+                      {/* PDF Preview Area */}
+                      <div className="flex-1 overflow-y-auto p-8">
+                        <div className="max-w-3xl mx-auto">
+                          {/* Paper Header */}
+                          <div className="text-center mb-8 pb-6 border-b-2 border-[#0071E3]">
+                            <h1 className="text-3xl font-bold text-[#1D1D1F] mb-2">{selectedPaper.title}</h1>
+                            <p className="text-lg text-[#86868B]">{selectedPaper.subject} - Grade 12</p>
+                            <p className="text-sm text-[#86868B] mt-2">{selectedPaper.type} | {selectedPaper.marks} Marks | {selectedPaper.duration}</p>
+                          </div>
 
-                    <div className="mt-8 p-4 bg-blue-50 rounded-xl">
-                      <p className="text-sm text-[#0071E3]">
-                        💡 Tip: Download both the question paper and memorandum for effective practice
-                      </p>
+                          {/* Topics */}
+                          <div className="mb-8">
+                            <h3 className="font-semibold text-lg mb-3">Topics Covered:</h3>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedPaper.topics.map((topic, i) => (
+                                <span key={i} className="bg-[#0071E3]/10 text-[#0071E3] px-3 py-1 rounded-full text-sm font-medium">
+                                  {topic}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Sample Questions */}
+                          <div className="space-y-6">
+                            <h3 className="font-semibold text-lg">Sample Questions:</h3>
+                            
+                            <div className="p-6 bg-[#F5F5F7] rounded-xl">
+                              <p className="font-semibold mb-3">QUESTION 1</p>
+                              <p className="text-[#1D1D1F] leading-relaxed mb-4">
+                                Solve for x: 2x² + 5x - 3 = 0
+                              </p>
+                              <p className="text-sm text-[#86868B]">[5 marks]</p>
+                            </div>
+
+                            <div className="p-6 bg-[#F5F5F7] rounded-xl">
+                              <p className="font-semibold mb-3">QUESTION 2</p>
+                              <p className="text-[#1D1D1F] leading-relaxed mb-4">
+                                Given the function f(x) = x³ - 2x² + x - 1, determine:
+                                <br />a) f'(x)
+                                <br />b) The turning points
+                                <br />c) Sketch the graph
+                              </p>
+                              <p className="text-sm text-[#86868B]">[10 marks]</p>
+                            </div>
+
+                            <div className="p-6 bg-[#F5F5F7] rounded-xl">
+                              <p className="font-semibold mb-3">QUESTION 3</p>
+                              <p className="text-[#1D1D1F] leading-relaxed mb-4">
+                                A triangle has vertices A(1,2), B(4,6), and C(7,2). Calculate:
+                                <br />a) The length of AB
+                                <br />b) The area of the triangle
+                                <br />c) The equation of line AC
+                              </p>
+                              <p className="text-sm text-[#86868B]">[8 marks]</p>
+                            </div>
+                          </div>
+
+                          {/* Download Notice */}
+                          <div className="mt-8 p-6 bg-gradient-to-r from-[#0071E3]/10 to-[#34C759]/10 rounded-xl border border-[#0071E3]/20">
+                            <h4 className="font-semibold text-lg mb-2">📥 Download Full Paper</h4>
+                            <p className="text-sm text-[#86868B] mb-4">
+                              This is a preview. Download the complete question paper and memorandum for full exam practice.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                              <button
+                                onClick={() => handleDownload(selectedPaper, 'question')}
+                                className="flex items-center justify-center gap-2 px-6 py-3 bg-[#0071E3] text-white rounded-xl font-semibold hover:bg-[#0071E3]/90 transition-all flex-1"
+                              >
+                                <Download size={18} />
+                                Download Question Paper
+                              </button>
+                              <button
+                                onClick={() => handleDownload(selectedPaper, 'memo')}
+                                className="flex items-center justify-center gap-2 px-6 py-3 bg-[#FF9500] text-white rounded-xl font-semibold hover:bg-[#FF9500]/90 transition-all flex-1"
+                              >
+                                <FileBadge size={18} />
+                                Download Memorandum
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
