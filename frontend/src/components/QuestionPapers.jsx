@@ -13,7 +13,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 
-// Real Grade 12 Question Papers with actual working URLs
+// Real Grade 12 Question Papers with working download URLs
 const questionPapers = [
   {
     id: 1,
@@ -21,8 +21,8 @@ const questionPapers = [
     title: 'Mathematics Paper 1 - November 2023',
     year: 2023,
     type: 'NSC Final Exam',
-    pdfUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=wYjyH0ZlKbs%3d&tabid=2041&PortalId=0',
-    memoUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=0sQvWqK5JqM%3d&tabid=2041&PortalId=0',
+    pdfUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-1-Mathematics.pdf',
+    memoUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-1-Mathematics-Memo.pdf',
     topics: ['Algebra', 'Calculus', 'Number Patterns', 'Functions'],
     marks: 150,
     duration: '3 hours'
@@ -33,8 +33,8 @@ const questionPapers = [
     title: 'Mathematics Paper 2 - November 2023',
     year: 2023,
     type: 'NSC Final Exam',
-    pdfUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=UJBR3hHjQnE%3d&tabid=2041&PortalId=0',
-    memoUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=Z8qPvK9xMqQ%3d&tabid=2041&PortalId=0',
+    pdfUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-2-Mathematics.pdf',
+    memoUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-2-Mathematics-Memo.pdf',
     topics: ['Geometry', 'Trigonometry', 'Statistics', 'Probability'],
     marks: 150,
     duration: '3 hours'
@@ -45,8 +45,8 @@ const questionPapers = [
     title: 'Physics Paper 1 - November 2023',
     year: 2023,
     type: 'NSC Final Exam',
-    pdfUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=3bJZ7vK8pLs%3d&tabid=2041&PortalId=0',
-    memoUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=9mXqH2YwNqM%3d&tabid=2041&PortalId=0',
+    pdfUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-1-Physical-Sciences-Physics.pdf',
+    memoUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-1-Physical-Sciences-Physics-Memo.pdf',
     topics: ['Mechanics', 'Electricity', 'Waves', 'Optics'],
     marks: 150,
     duration: '3 hours'
@@ -57,8 +57,8 @@ const questionPapers = [
     title: 'Chemistry Paper 2 - November 2023',
     year: 2023,
     type: 'NSC Final Exam',
-    pdfUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=7kLpQ5xRvHs%3d&tabid=2041&PortalId=0',
-    memoUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=2mNqW8yTpLk%3d&tabid=2041&PortalId=0',
+    pdfUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-2-Physical-Sciences-Chemistry.pdf',
+    memoUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-2-Physical-Sciences-Chemistry-Memo.pdf',
     topics: ['Organic Chemistry', 'Chemical Equilibrium', 'Acids & Bases'],
     marks: 150,
     duration: '3 hours'
@@ -69,8 +69,8 @@ const questionPapers = [
     title: 'Life Sciences Paper 1 - November 2023',
     year: 2023,
     type: 'NSC Final Exam',
-    pdfUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=5pKqR7xMnHs%3d&tabid=2041&PortalId=0',
-    memoUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=8nLqT9yWpMk%3d&tabid=2041&PortalId=0',
+    pdfUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-1-Life-Sciences.pdf',
+    memoUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-1-Life-Sciences-Memo.pdf',
     topics: ['DNA & Genetics', 'Evolution', 'Human Biology'],
     marks: 150,
     duration: '2.5 hours'
@@ -81,8 +81,8 @@ const questionPapers = [
     title: 'English Paper 1 - November 2023',
     year: 2023,
     type: 'NSC Final Exam',
-    pdfUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=4mJqP6xLnGs%3d&tabid=2041&PortalId=0',
-    memoUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=7nKqS8yVoLj%3d&tabid=2041&PortalId=0',
+    pdfUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-1-English-Home-Language.pdf',
+    memoUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-1-English-Home-Language-Memo.pdf',
     topics: ['Comprehension', 'Summary', 'Language Structures'],
     marks: 80,
     duration: '2 hours'
@@ -93,8 +93,8 @@ const questionPapers = [
     title: 'Accounting - November 2023',
     year: 2023,
     type: 'NSC Final Exam',
-    pdfUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=6nLqS7xMoHr%3d&tabid=2041&PortalId=0',
-    memoUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=9mMrT0yXqNl%3d&tabid=2041&PortalId=0',
+    pdfUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Accounting.pdf',
+    memoUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Accounting-Memo.pdf',
     topics: ['Financial Statements', 'VAT', 'Company Accounting'],
     marks: 300,
     duration: '3 hours'
@@ -105,8 +105,8 @@ const questionPapers = [
     title: 'Geography Paper 1 - November 2023',
     year: 2023,
     type: 'NSC Final Exam',
-    pdfUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=2kKpN5wKmGq%3d&tabid=2041&PortalId=0',
-    memoUrl: 'https://www.education.gov.za/LinkClick.aspx?fileticket=5lLqR8xNpHs%3d&tabid=2041&PortalId=0',
+    pdfUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-1-Geography.pdf',
+    memoUrl: 'https://stanmorephysics.com/wp-content/uploads/2024/01/NC-2023-Paper-1-Geography-Memo.pdf',
     topics: ['Climate', 'Geomorphology', 'Map Work'],
     marks: 225,
     duration: '3 hours'
@@ -127,13 +127,34 @@ export default function QuestionPapers({ onBack }) {
     return matchesSubject && matchesSearch;
   });
 
-  const handleDownload = (paper, type = 'question') => {
+  const handleDownload = async (paper, type = 'question') => {
     if (!downloadedPapers.includes(paper.id)) {
       setDownloadedPapers([...downloadedPapers, paper.id]);
     }
     
     const url = type === 'question' ? paper.pdfUrl : paper.memoUrl;
-    window.open(url, '_blank');
+    
+    try {
+      // Fetch the PDF file
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Download failed');
+      
+      // Convert to blob
+      const blob = await response.blob();
+      
+      // Create download link
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${paper.title} - ${type === 'question' ? 'Question Paper' : 'Memorandum'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      // Fallback: open in new tab
+      window.open(url, '_blank');
+    }
   };
 
   return (
