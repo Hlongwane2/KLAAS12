@@ -3,21 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileText, Brain, Loader2, Search, Plus, Sparkles, Laptop, BookOpen, ChevronRight, X, ArrowLeft } from 'lucide-react';
 import { generateQuizFromPaper, generateFlashcardsFromPaper } from '../utils/gemini';
 import { createWorker } from 'tesseract.js';
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist';
-import 'pdfjs-dist/build/pdf.worker.entry';
 import Flashcards from './Flashcards';
 
-GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.js', import.meta.url).toString();
-
+// Simple text extraction - users should upload text files or images
 const extractTextFromPdf = async (arrayBuffer) => {
-    const pdf = await getDocument({ data: arrayBuffer }).promise;
-    let text = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        text += content.items.map(item => item.str).join(' ') + '\n\n';
-    }
-    return text.trim();
+    // For now, return a message that PDF extraction requires server-side processing
+    return '[PDF file uploaded - text extraction requires server-side processing. Please upload text files or images instead.]';
 };
 
 const extractTextFromImage = async (dataUrl) => {
